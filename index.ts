@@ -1,4 +1,12 @@
+const handlers = []
+
+export function registerAsyncErrorHandler(handler: (error: Error) => void) {
+  handlers.push(handler)
+}
+
 function createAccessProxy<T extends any>(error: string | false, value: T) {
+  let errorPropertyAccessed = false
+
   return new Proxy<{ error: false | string; value: T }>(
     { error, value },
     {
@@ -8,7 +16,13 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
           return null
         }
         if (prop === 'error') {
+          errorPropertyAccessed = true
           return error
+        }
+        if (!errorPropertyAccessed && error) {
+          handlers.forEach((handler) => {
+            handler(error)
+          })
         }
         return value
       },

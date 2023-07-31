@@ -1,5 +1,5 @@
-import { test, expect } from 'vitest'
-import { it } from '../index'
+import { test, expect, vi } from 'vitest'
+import { it, registerAsyncErrorHandler } from '../index'
 
 const successfulPromise = () =>
   new Promise<any>((done) => {
@@ -53,4 +53,16 @@ test('Can access the thrown error message.', async () => {
   const { error, value } = await it(thrownErrorPromise())
   expect(error).toBe('Error Message')
   expect(value).toBe(undefined)
+})
+
+test("Error handler is called when error property isn't accessed.", async () => {
+  const handlerMock = vi.fn(() => {})
+  registerAsyncErrorHandler(handlerMock)
+  const { value: firstValue } = await it(successfulPromise())
+  expect(firstValue).toBe('Hey')
+  expect(handlerMock).not.toHaveBeenCalled()
+
+  const { value: secondValue } = await it(failingPromise())
+  expect(secondValue).toBe(undefined)
+  expect(handlerMock).toHaveBeenCalled()
 })
