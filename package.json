@@ -1,0 +1,45 @@
+{
+  "name": "avait",
+  "description": "Async error handling without try-catch.",
+  "version": "0.0.0-development",
+  "repository": "github:tobua/avait",
+  "license": "MIT",
+  "author": "Matthias Giger",
+  "scripts": {
+    "build": "padua build",
+    "start": "padua watch",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "await"
+  ],
+  "devDependencies": {
+    "padua": "^1.0.0",
+    "vitest": "^0.33.0"
+  },
+  "prettier": "padua/configuration/.prettierrc.json",
+  "eslintConfig": {
+    "extends": "./node_modules/padua/configuration/eslint.cjs"
+  },
+  "publishConfig": {
+    "provenance": true
+  },
+  "engines": {
+    "node": ">= 16"
+  }
+}
