@@ -29,8 +29,8 @@
     "await"
   ],
   "devDependencies": {
-    "padua": "^1.0.0",
-    "vitest": "^0.33.0"
+    "padua": "^2.0.1",
+    "vitest": "^0.34.1"
   },
   "prettier": "padua/configuration/.prettierrc.json",
   "eslintConfig": {

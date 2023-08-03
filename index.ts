@@ -21,6 +21,15 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
       if (prop === 'then') {
         return null
       }
+      if (
+        prop === 'error' &&
+        !error &&
+        typeof value === 'object' &&
+        Object.hasOwn(value, 'error')
+      ) {
+        errorPropertyAccessed = true
+        return (value as any).error
+      }
       if (prop === 'error') {
         errorPropertyAccessed = true
         return error
@@ -38,25 +47,30 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
       }
       return value
     },
-    // set: function (target, prop, val) {
-    //   value = val;
-    //   return true;
-    // },
-    // has: function (target, prop) {
-    //   return true;
-    // },
-    // getOwnPropertyDescriptor: function (target, prop) {
-    //   return {
-    //     configurable: true,
-    //     enumerable: true,
-    //   };
-    // },
-    // ownKeys: function (target) {
-    //   return [];
-    // },
-    // isExtensible: function (target) {
-    //   return false;
-    // },
+    set() {
+      throw new Error('Cannot extend avait result object.')
+    },
+    has(_, prop) {
+      if (typeof value !== 'object') {
+        return false
+      }
+      return Object.hasOwn(value, prop)
+    },
+    getOwnPropertyDescriptor() {
+      return {
+        configurable: false,
+        enumerable: true,
+      }
+    },
+    ownKeys() {
+      if (typeof value !== 'object') {
+        return []
+      }
+      return Object.keys(value)
+    },
+    isExtensible() {
+      return false
+    },
   })
 }
 

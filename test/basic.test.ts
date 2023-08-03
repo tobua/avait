@@ -14,6 +14,11 @@ const objectPromise = () =>
     setTimeout(() => done(objectReturnValue))
   })
 
+const objectPromiseWithError = () =>
+  new Promise<typeof objectReturnValue & { error: string }>((done) => {
+    setTimeout(() => done({ ...objectReturnValue, error: 'Regular Value' }))
+  })
+
 const failingObjectPromise = () =>
   new Promise<typeof objectReturnValue>((_, reject) => {
     // eslint-disable-next-line prefer-promise-reject-errors
@@ -82,6 +87,15 @@ test('Can access the error and the spread object properties.', async () => {
   expect(value).toBe(789)
 })
 
+test('When present error values are merged.', async () => {
+  const {
+    error,
+    nested: { value },
+  } = await it(objectPromiseWithError())
+  expect(error).toBe('Regular Value')
+  expect(value).toBe(789)
+})
+
 test('Accessing missing properties will lead to a type error.', async () => {
   const {
     error,
@@ -130,4 +144,11 @@ test('Handler is called with spread properties.', async () => {
   expect(first).toBe(undefined)
   expect(handlerMock).toHaveBeenCalled()
   expect(handlerMock.mock.calls[0][0]).toBe('Error')
+})
+
+test('The result object cannot be modified later.', async () => {
+  const result = await it(successfulPromise())
+  expect(() => {
+    result.another = 5
+  }).toThrow()
 })
