@@ -10,6 +10,19 @@
     "start": "padua watch",
     "test": "vitest run"
   },
+  "padua": {
+    "entry": [
+      "index.ts",
+      "worker.ts"
+    ],
+    "esbuild": {
+      "platform": "node",
+      "format": "esm",
+      "define": {
+        "process.env.NODE_ENV": "\"production\""
+      }
+    }
+  },
   "type": "module",
   "sideEffects": false,
   "main": "dist/index.js",
@@ -23,7 +36,8 @@
   },
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "worker.js"
   ],
   "keywords": [
     "await"
@@ -34,7 +48,11 @@
   },
   "prettier": "padua/configuration/.prettierrc.json",
   "eslintConfig": {
-    "extends": "./node_modules/padua/configuration/eslint.cjs"
+    "extends": "./node_modules/padua/configuration/eslint.cjs",
+    "globals": {
+      "Atomics": "readonly",
+      "SharedArrayBuffer": "readonly"
+    }
   },
   "publishConfig": {
     "provenance": true

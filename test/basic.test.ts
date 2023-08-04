@@ -1,3 +1,4 @@
+import { readFile } from 'fs/promises'
 import { test, expect, vi, afterEach } from 'vitest'
 import { it, registerAsyncErrorHandler, reset } from '../index'
 
@@ -151,4 +152,17 @@ test('The result object cannot be modified later.', async () => {
   expect(() => {
     result.another = 5
   }).toThrow()
+})
+
+test('Example in the documentation is working.', async () => {
+  const { error, value } = await it(readFile('./test/fixture/some-text.txt', 'utf-8'))
+
+  expect(error).toBe(undefined)
+  expect(value).toBe('Hello World!')
+})
+
+test('Example in the documentation is failing with missing file.', async () => {
+  const { error } = await it(readFile('./test/fixture/missing.txt', 'utf-8'))
+
+  expect(error).toContain('ENOENT')
 })

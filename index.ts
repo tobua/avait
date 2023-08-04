@@ -1,3 +1,5 @@
+export { createSynchronizedFunction as toSync } from './to-sync'
+
 type ValueType<T> = T extends object ? T : { value: T }
 
 const handlers = []
