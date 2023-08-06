@@ -88,6 +88,16 @@ test('Can access the error and the spread object properties.', async () => {
   expect(value).toBe(789)
 })
 
+test('Any values can be accessed using the spread syntax.', async () => {
+  const { error, ...values } = await it(objectPromise())
+  expect(error).toBe(undefined)
+  expect(values.first).toBe(123)
+  expect(values.second).toBe(456)
+  expect(values.nested.value).toBe(789)
+  // @ts-expect-error
+  expect(values.missing).toBe(undefined)
+})
+
 test('When present error values are merged.', async () => {
   const {
     error,
@@ -165,4 +175,16 @@ test('Example in the documentation is failing with missing file.', async () => {
   const { error } = await it(readFile('./test/fixture/missing.txt', 'utf-8'))
 
   expect(error).toContain('ENOENT')
+})
+
+test('Can be used with fetch.', async () => {
+  const response = await it(fetch('https://dummyjson.com/products/1'))
+
+  expect(response.error).toBe(undefined)
+  expect(response.value).toBeInstanceOf(Response)
+
+  const data = await it(response.value.json())
+
+  expect(data.error).toBe(undefined)
+  expect(data.title).toBe('iPhone 9')
 })

@@ -14,11 +14,14 @@ export function reset() {
 
 function createAccessProxy<T extends any>(error: string | false, value: T) {
   let errorPropertyAccessed = false
-  const initialTarget = (typeof value === 'object' ? { error, ...value } : { error, value }) as {
+  const initialTarget = (
+    typeof value === 'object' ? { error, value, ...value } : { error, value }
+  ) as {
     error: false | string
+    value: T
   } & ValueType<T>
 
-  return new Proxy<{ error: false | string } & ValueType<T>>(initialTarget, {
+  return new Proxy<{ error: false | string; value: T } & ValueType<T>>(initialTarget, {
     get(_, prop) {
       if (prop === 'then') {
         return null
@@ -41,11 +44,11 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
           handler(error)
         })
       }
+      if (prop === 'value') {
+        return value
+      }
       if (typeof value === 'object') {
-        if (Object.hasOwn(value, prop)) {
-          return value[prop]
-        }
-        return undefined
+        return value[prop]
       }
       return value
     },
@@ -60,7 +63,7 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
     },
     getOwnPropertyDescriptor() {
       return {
-        configurable: false,
+        configurable: true, // Required for ...spread of values.
         enumerable: true,
       }
     },
@@ -78,7 +81,7 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
 
 export async function it<T extends any>(
   promise: Promise<T>
-): Promise<{ error: false | string } & ValueType<T>> {
+): Promise<{ error: false | string; value: T } & ValueType<T>> {
   let result: T
   let errorMessage: string
 
