@@ -1,7 +1,5 @@
 export { createSynchronizedFunction as toSync } from './to-sync'
 
-type ValueType<T> = T extends object ? T : { value: T }
-
 const handlers = []
 
 export function registerAsyncErrorHandler(handler: (error: Error) => void) {
@@ -79,21 +77,48 @@ function createAccessProxy<T extends any>(error: string | false, value: T) {
   })
 }
 
-export async function it<T extends any>(
-  promise: Promise<T>
-): Promise<{ error: false | string; value: T } & ValueType<T>> {
-  let result: T
-  let errorMessage: string
+type ValueType<T> = T extends Promise<infer U> ? U : T
 
-  try {
-    result = await promise
-  } catch (error) {
-    if (error instanceof Error && error.message) {
-      errorMessage = error.message
+type ReturnType<T, U> = Promise<{ error: false | string; value: T } & ValueType<T>> &
+  Chainable<T, U>
+
+interface Chainable<T, U> {
+  chain: <V>(method: (value: T) => Promise<V>) => ReturnType<V, U>
+}
+
+export function it<T extends any>(promise: Promise<T>): ReturnType<T, T> {
+  const chained = []
+
+  const runPromiseAndNextChain = (runPromise: Promise<T>) => async (done) => {
+    let result: T
+    let errorMessage: string
+
+    try {
+      result = await runPromise
+    } catch (error) {
+      if (error instanceof Error && error.message) {
+        errorMessage = error.message
+      } else {
+        errorMessage = error
+      }
+    }
+
+    if (chained.length) {
+      const nextPromise = chained.shift()(result)
+      result = await new Promise(runPromiseAndNextChain(nextPromise))
+      done(result)
     } else {
-      errorMessage = error
+      const proxy = createAccessProxy(errorMessage, result)
+      done(proxy)
     }
   }
 
-  return createAccessProxy(errorMessage, result)
+  const returnPromise = new Promise(runPromiseAndNextChain(promise)) as any
+
+  returnPromise.chain = (method: Function) => {
+    chained.push(method)
+    return returnPromise
+  }
+
+  return returnPromise
 }

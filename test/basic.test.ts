@@ -188,3 +188,50 @@ test('Can be used with fetch.', async () => {
   expect(data.error).toBe(undefined)
   expect(data.title).toBe('iPhone 9')
 })
+
+const chainedPromise = () =>
+  new Promise<{
+    level: number
+    another: () => Promise<{
+      level: number
+      oneMoreLevel: () => Promise<{ level: string }>
+    }>
+  }>((done) => {
+    setTimeout(() =>
+      done({
+        level: 1,
+        another: () =>
+          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
+            (done1) => {
+              setTimeout(() =>
+                done1({
+                  level: 2,
+                  oneMoreLevel: () =>
+                    new Promise<{ level: string }>((done2) => {
+                      setTimeout(() => done2({ level: '3' }))
+                    }),
+                })
+              )
+            }
+          ),
+      })
+    )
+  })
+
+test('Several async calls can be chained.', async () => {
+  const data = await it(chainedPromise())
+    .chain((next) => next.another())
+    .chain((next) => next.oneMoreLevel())
+
+  expect(data.error).toBe(undefined)
+  // @ts-expect-error
+  const value: number = data.level // Should be inferred as string.
+  expect(value).toBe('3')
+})
+
+test('Promises can be chained with fetch.', async () => {
+  const data = await it(fetch('https://dummyjson.com/products/1')).chain((next) => next.json())
+
+  expect(data.error).toBe(undefined)
+  expect(data.title).toBe('iPhone 9')
+})
