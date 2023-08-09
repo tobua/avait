@@ -1,76 +1,35 @@
 import { readFile } from 'fs/promises'
 import { test, expect, vi, afterEach } from 'vitest'
 import { it, registerAsyncErrorHandler, reset } from '../index'
+import * as promise from './promises'
 
 afterEach(reset)
 
-const successfulPromise = () =>
-  new Promise<any>((done) => {
-    setTimeout(() => done('Hey'))
-  })
-
-const objectReturnValue = { first: 123, second: 456, nested: { value: 789 } }
-const objectPromise = () =>
-  new Promise<typeof objectReturnValue>((done) => {
-    setTimeout(() => done(objectReturnValue))
-  })
-
-const objectPromiseWithError = () =>
-  new Promise<typeof objectReturnValue & { error: string }>((done) => {
-    setTimeout(() => done({ ...objectReturnValue, error: 'Regular Value' }))
-  })
-
-const failingObjectPromise = () =>
-  new Promise<typeof objectReturnValue>((_, reject) => {
-    // eslint-disable-next-line prefer-promise-reject-errors
-    setTimeout(() => reject('Error'))
-  })
-
-const failingPromise = () =>
-  new Promise<any>((_, reject) => {
-    setTimeout(() => {
-      // eslint-disable-next-line prefer-promise-reject-errors
-      reject('Error')
-    })
-  })
-
-const failingWithErrorPromise = () =>
-  new Promise<any>((_, reject) => {
-    setTimeout(() => {
-      reject(new Error('Custom Error'))
-    })
-  })
-
-const thrownErrorPromise = () =>
-  new Promise<any>(() => {
-    throw new Error('Error Message')
-  })
-
 test('Can access the value.', async () => {
-  const { value } = await it(successfulPromise())
+  const { value } = await it(promise.successfulPromise())
   expect(value).toBe('Hey')
 })
 
 test('Can access the error and the value.', async () => {
-  const { error, value } = await it(successfulPromise())
+  const { error, value } = await it(promise.successfulPromise())
   expect(value).toBe('Hey')
   expect(error).toBe(undefined)
 })
 
 test('Can access the rejected promise error message.', async () => {
-  const { error, value } = await it(failingPromise())
+  const { error, value } = await it(promise.failingPromise())
   expect(error).toBe('Error')
   expect(value).toBe(undefined)
 })
 
 test('Can access the rejected promise error.', async () => {
-  const { error, value } = await it(failingWithErrorPromise())
+  const { error, value } = await it(promise.failingWithErrorPromise())
   expect(error).toBe('Custom Error')
   expect(value).toBe(undefined)
 })
 
 test('Can access the thrown error message.', async () => {
-  const { error, value } = await it(thrownErrorPromise())
+  const { error, value } = await it(promise.thrownErrorPromise())
   expect(error).toBe('Error Message')
   expect(value).toBe(undefined)
 })
@@ -81,7 +40,7 @@ test('Can access the error and the spread object properties.', async () => {
     first,
     second,
     nested: { value },
-  } = await it(objectPromise())
+  } = await it(promise.objectPromise())
   expect(error).toBe(undefined)
   expect(first).toBe(123)
   expect(second).toBe(456)
@@ -89,7 +48,7 @@ test('Can access the error and the spread object properties.', async () => {
 })
 
 test('Any values can be accessed using the spread syntax.', async () => {
-  const { error, ...values } = await it(objectPromise())
+  const { error, ...values } = await it(promise.objectPromise())
   expect(error).toBe(undefined)
   expect(values.first).toBe(123)
   expect(values.second).toBe(456)
@@ -102,7 +61,7 @@ test('When present error values are merged.', async () => {
   const {
     error,
     nested: { value },
-  } = await it(objectPromiseWithError())
+  } = await it(promise.objectPromiseWithError())
   expect(error).toBe('Regular Value')
   expect(value).toBe(789)
 })
@@ -113,7 +72,7 @@ test('Accessing missing properties will lead to a type error.', async () => {
     // @ts-expect-error
     missing,
     nested: { value },
-  } = await it(objectPromise())
+  } = await it(promise.objectPromise())
   expect(error).toBe(undefined)
   expect(missing).toBe(undefined)
   expect(value).toBe(789)
@@ -122,11 +81,11 @@ test('Accessing missing properties will lead to a type error.', async () => {
 test("Error handler is called when error property isn't accessed.", async () => {
   const handlerMock = vi.fn()
   registerAsyncErrorHandler(handlerMock)
-  const { value: firstValue } = await it(successfulPromise())
+  const { value: firstValue } = await it(promise.successfulPromise())
   expect(firstValue).toBe('Hey')
   expect(handlerMock).not.toHaveBeenCalled()
 
-  const { value: secondValue } = await it(failingPromise())
+  const { value: secondValue } = await it(promise.failingPromise())
   expect(secondValue).toBe(undefined)
   expect(handlerMock).toHaveBeenCalled()
   expect(handlerMock.mock.calls[0][0]).toBe('Error')
@@ -137,12 +96,12 @@ test('Multiple error handlers can be added.', async () => {
   const secondHandlerMock = vi.fn(() => {})
   registerAsyncErrorHandler(firstHandlerMock)
   registerAsyncErrorHandler(secondHandlerMock)
-  const { value: firstValue } = await it(successfulPromise())
+  const { value: firstValue } = await it(promise.successfulPromise())
   expect(firstValue).toBe('Hey')
   expect(firstHandlerMock).not.toHaveBeenCalled()
   expect(secondHandlerMock).not.toHaveBeenCalled()
 
-  const { value: secondValue } = await it(failingPromise())
+  const { value: secondValue } = await it(promise.failingPromise())
   expect(secondValue).toBe(undefined)
   expect(firstHandlerMock).toHaveBeenCalled()
   expect(secondHandlerMock).toHaveBeenCalled()
@@ -151,14 +110,14 @@ test('Multiple error handlers can be added.', async () => {
 test('Handler is called with spread properties.', async () => {
   const handlerMock = vi.fn()
   registerAsyncErrorHandler(handlerMock)
-  const { first } = await it(failingObjectPromise())
+  const { first } = await it(promise.failingObjectPromise())
   expect(first).toBe(undefined)
   expect(handlerMock).toHaveBeenCalled()
   expect(handlerMock.mock.calls[0][0]).toBe('Error')
 })
 
 test('The result object cannot be modified later.', async () => {
-  const result = await it(successfulPromise())
+  const result = await it(promise.successfulPromise())
   expect(() => {
     result.another = 5
   }).toThrow()
@@ -189,39 +148,10 @@ test('Can be used with fetch.', async () => {
   expect(data.title).toBe('iPhone 9')
 })
 
-const chainedPromise = () =>
-  new Promise<{
-    level: number
-    another: () => Promise<{
-      level: number
-      oneMoreLevel: () => Promise<{ level: string }>
-    }>
-  }>((done) => {
-    setTimeout(() =>
-      done({
-        level: 1,
-        another: () =>
-          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
-            (done1) => {
-              setTimeout(() =>
-                done1({
-                  level: 2,
-                  oneMoreLevel: () =>
-                    new Promise<{ level: string }>((done2) => {
-                      setTimeout(() => done2({ level: '3' }))
-                    }),
-                })
-              )
-            }
-          ),
-      })
-    )
-  })
-
-test('Several async calls can be chained.', async () => {
-  const data = await it(chainedPromise())
-    .chain((next) => next.another())
-    .chain((next) => next.oneMoreLevel())
+test('Several async calls can be added.', async () => {
+  const data = await it(promise.chainedPromise())
+    .add((next) => next.another())
+    .add((next) => next.oneMoreLevel())
 
   expect(data.error).toBe(undefined)
   // @ts-expect-error
@@ -229,9 +159,49 @@ test('Several async calls can be chained.', async () => {
   expect(value).toBe('3')
 })
 
-test('Promises can be chained with fetch.', async () => {
-  const data = await it(fetch('https://dummyjson.com/products/1')).chain((next) => next.json())
+test('Promises can be added with fetch.', async () => {
+  const data = await it(fetch('https://dummyjson.com/products/1')).add((next) => next.json())
 
   expect(data.error).toBe(undefined)
   expect(data.title).toBe('iPhone 9')
+})
+
+test('An error in added in promises is collected.', async () => {
+  const data = await it(promise.chainedPromiseWithErrors())
+    .add((next) => next.another())
+    .add((next) => next.oneMoreLevel())
+
+  expect(data.error).toBe('level 3 error')
+})
+
+test('An error in the middle of the added in promises is collected.', async () => {
+  const data = await it(promise.chainedPromiseWithErrors([2]))
+    .add((next) => next.another())
+    .add((next) => next.oneMoreLevel())
+
+  expect(data.error).toBe('level 2 error')
+})
+
+test('First thrown error is returned.', async () => {
+  const data = await it(promise.chainedPromiseWithErrors([1, 2, 3]))
+    .add((next) => next.another())
+    .add((next) => next.oneMoreLevel())
+
+  expect(data.error).toBe('level 1 error')
+})
+
+test('An error in the middle of the rejected in promises is returned.', async () => {
+  const data = await it(promise.chainedPromiseWithRejects([2]))
+    .add((next) => next.another())
+    .add((next) => next.oneMoreLevel())
+
+  expect(data.error).toBe('level 2 reject')
+})
+
+test('The first rejected promise is returned.', async () => {
+  const data = await it(promise.chainedPromiseWithRejects([1, 2]))
+    .add((next) => next.another())
+    .add((next) => next.oneMoreLevel())
+
+  expect(data.error).toBe('level 1 reject')
 })

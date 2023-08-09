@@ -15,12 +15,14 @@ export function createWorker(): Worker {
   return worker
 }
 
-export function createSynchronizedFunction(functionName: string, filePath: string) {
+export function createSynchronizedFunction(filePathOrModule: string, functionName = 'default') {
   return (...args: any[]) => {
     const signal = new Int32Array(new SharedArrayBuffer(4))
     const { port1: localPort, port2: workerPort } = new MessageChannel()
     createWorker()
-    worker.postMessage({ signal, port: workerPort, functionName, args, filePath }, [workerPort])
+    worker.postMessage({ signal, port: workerPort, functionName, args, filePathOrModule }, [
+      workerPort,
+    ])
 
     Atomics.wait(signal, 0, 0)
 

@@ -10,26 +10,32 @@ test('Creates a worker.', () => {
 })
 
 test('Creates and resolves synchronized functions for various types.', () => {
-  const regularMethod = createSynchronizedFunction('regularMethod', '../test/fixture/methods.js')
+  const regularMethod = createSynchronizedFunction('../test/fixture/methods.js', 'regularMethod')
   expect(regularMethod()).toBe('done regular')
 
   const asyncWrappedMethod = createSynchronizedFunction(
-    'asyncWrappedMethod',
-    '../test/fixture/methods.js'
+    '../test/fixture/methods.js',
+    'asyncWrappedMethod'
   )
   expect(asyncWrappedMethod()).toBe('done async wrapped')
 
-  const asyncMethod = createSynchronizedFunction('asyncMethod', '../test/fixture/methods.js')
+  const asyncMethod = createSynchronizedFunction('../test/fixture/methods.js', 'asyncMethod')
   expect(asyncMethod()).toBe('done async')
 
-  const fsMethod = createSynchronizedFunction('readFile', 'fs/promises')
+  const fsMethod = createSynchronizedFunction('fs/promises', 'readFile')
   expect(fsMethod('./test/fixture/some-text.txt', 'utf-8')).toBe('Hello World!')
 })
 
 test('Works with main toSync export.', () => {
-  const asyncResult = toSync('asyncMethod', '../test/fixture/methods.js')()
+  const asyncResult = toSync('../test/fixture/methods.js', 'asyncMethod')()
   expect(asyncResult).toBe('done async')
 
-  const fileResult = toSync('readFile', 'fs/promises')('./test/fixture/some-text.txt', 'utf-8')
+  const fileResult = toSync('fs/promises', 'readFile')('./test/fixture/some-text.txt', 'utf-8')
   expect(fileResult).toBe('Hello World!')
 })
+
+// test('Can synchronize common inherently asynchronous network operations.', () => {
+//   const asyncResult = toSync('axios', 'get')('https://dummyjson.com/products/1')
+//   console.log('async', asyncResult)
+//   const result = toSync('node-fetch', 'default')('https://dummyjson.com/products/1')
+// })

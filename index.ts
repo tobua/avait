@@ -83,18 +83,18 @@ type ReturnType<T, U> = Promise<{ error: false | string; value: T } & ValueType<
   Chainable<T, U>
 
 interface Chainable<T, U> {
-  chain: <V>(method: (value: T) => Promise<V>) => ReturnType<V, U>
+  add: <V>(method: (value: T) => Promise<V>) => ReturnType<V, U>
 }
 
 export function it<T extends any>(promise: Promise<T>): ReturnType<T, T> {
-  const chained = []
+  const next = [] // Additionally chained promises to be evaluated in series.
 
-  const runPromiseAndNextChain = (runPromise: Promise<T>) => async (done) => {
+  const runPromise = (currentPromise: Promise<T>) => async (done: Function) => {
     let result: T
     let errorMessage: string
 
     try {
-      result = await runPromise
+      result = await currentPromise
     } catch (error) {
       if (error instanceof Error && error.message) {
         errorMessage = error.message
@@ -103,9 +103,10 @@ export function it<T extends any>(promise: Promise<T>): ReturnType<T, T> {
       }
     }
 
-    if (chained.length) {
-      const nextPromise = chained.shift()(result)
-      result = await new Promise(runPromiseAndNextChain(nextPromise))
+    // Exist on first error as further promises would require the result.
+    if (next.length && !errorMessage) {
+      const nextPromise = next.shift()(result)
+      result = await new Promise(runPromise(nextPromise))
       done(result)
     } else {
       const proxy = createAccessProxy(errorMessage, result)
@@ -113,10 +114,10 @@ export function it<T extends any>(promise: Promise<T>): ReturnType<T, T> {
     }
   }
 
-  const returnPromise = new Promise(runPromiseAndNextChain(promise)) as any
+  const returnPromise = new Promise(runPromise(promise)) as any
 
-  returnPromise.chain = (method: Function) => {
-    chained.push(method)
+  returnPromise.add = (method: Function) => {
+    next.push(method)
     return returnPromise
   }
 
