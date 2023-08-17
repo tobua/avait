@@ -15,23 +15,43 @@ export function createWorker(): Worker {
   return worker
 }
 
-export function createSynchronizedFunction(filePathOrModule: string, functionName = 'default') {
-  return (...args: any[]) => {
+interface JsonObject {
+  [key: string]: SerializableValue
+}
+interface JsonArray extends Array<SerializableValue> {}
+type SerializableValue = string | number | boolean | null | JsonObject | JsonArray
+
+type FunctionArguments<T extends string | string[]> = T extends string[]
+  ? SerializableValue[][]
+  : SerializableValue[]
+
+export function createSynchronizedFunction<T extends string | string[]>(
+  filePathOrModule: string,
+  functionName?: T
+) {
+  return (...args: FunctionArguments<T>) => {
     const signal = new Int32Array(new SharedArrayBuffer(4))
     const { port1: localPort, port2: workerPort } = new MessageChannel()
     createWorker()
-    worker.postMessage({ signal, port: workerPort, functionName, args, filePathOrModule }, [
-      workerPort,
-    ])
+    worker.postMessage(
+      {
+        signal,
+        port: workerPort,
+        functionName: Array.isArray(functionName) ? functionName : [functionName ?? 'default'],
+        args: Array.isArray(functionName) ? args : [args],
+        filePathOrModule,
+      },
+      [workerPort]
+    )
 
     Atomics.wait(signal, 0, 0)
 
     const {
-      message: { result, error, errorData },
+      message: { result = {}, error },
     } = receiveMessageOnPort(localPort) ?? {}
 
     if (error) {
-      throw Object.assign(error, errorData)
+      result.error = error
     }
 
     return result

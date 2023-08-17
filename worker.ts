@@ -1,8 +1,30 @@
 import { parentPort } from 'worker_threads'
 
-// TODO implement chaining of promises to ensure serializability of response.
-async function callMethodFromFile({ functionName, args, filePathOrModule }) {
-  const fileExports = await import(filePathOrModule)
+async function callMethodFromFile({
+  functionName,
+  args,
+  filePathOrModule,
+}: {
+  functionName: string | Function
+  args: any[]
+  filePathOrModule: string
+}) {
+  // Directly return promise from previous result.
+  if (typeof functionName !== 'string') {
+    const result = functionName(...(args ?? []))
+    return result
+  }
+
+  let fileExports = null
+
+  // Import module or file.
+  try {
+    fileExports = await import(filePathOrModule)
+  } catch (error) {
+    return `Failed to import "${filePathOrModule}" from ${process.cwd()}.`
+  }
+
+  // Determine correct export and call with arguments.
   if (
     !fileExports[functionName] &&
     typeof fileExports.default !== 'undefined' &&
@@ -19,23 +41,47 @@ async function callMethodFromFile({ functionName, args, filePathOrModule }) {
 type Response = {
   result: any
   error?: any
-  errorData?: object
 }
 
 parentPort.addListener(
   'message',
-  async ({ signal, port, functionName, args, filePathOrModule }) => {
+  async ({
+    signal,
+    port,
+    functionName,
+    args,
+    filePathOrModule,
+  }: {
+    signal: Int32Array
+    port: MessagePort
+    functionName: string[]
+    args: any[][]
+    filePathOrModule: string
+  }) => {
     const response: Response = { result: null }
+    let result = null
 
-    try {
-      response.result = await callMethodFromFile({
-        functionName,
-        args,
-        filePathOrModule,
-      })
-    } catch (error) {
-      response.error = error
-      response.errorData = { ...error }
+    const functionPromises = functionName.map((name, index) => async (previousResult) => {
+      try {
+        response.result = await callMethodFromFile({
+          // Cannot pass previousResult[name] to callMethodFromFile as it would lose context.
+          functionName: previousResult
+            ? (...innerArgs: any[]) => previousResult[name](innerArgs)
+            : name,
+          args: args[index],
+          filePathOrModule,
+        })
+      } catch (error) {
+        response.error = error
+      }
+
+      return response.result
+    })
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const promiseFn of functionPromises) {
+      // eslint-disable-next-line no-await-in-loop
+      result = await promiseFn(result)
     }
 
     try {

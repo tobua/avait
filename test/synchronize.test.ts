@@ -24,6 +24,12 @@ test('Creates and resolves synchronized functions for various types.', () => {
 
   const fsMethod = createSynchronizedFunction('fs/promises', 'readFile')
   expect(fsMethod('./test/fixture/some-text.txt', 'utf-8')).toBe('Hello World!')
+
+  const missingMethod = createSynchronizedFunction('../test/fixture/missing.js', 'missingMethod')
+  expect(missingMethod()).toContain('Failed to import')
+
+  const chainedFetch = createSynchronizedFunction('node-fetch', ['default', 'json'])
+  expect(chainedFetch([['https://dummyjson.com/products/1'], []]).title).toBe('iPhone 9')
 })
 
 test('Works with main toSync export.', () => {
@@ -34,8 +40,23 @@ test('Works with main toSync export.', () => {
   expect(fileResult).toBe('Hello World!')
 })
 
-// test('Can synchronize common inherently asynchronous network operations.', () => {
-//   const asyncResult = toSync('axios', 'get')('https://dummyjson.com/products/1')
-//   console.log('async', asyncResult)
-//   const result = toSync('node-fetch', 'default')('https://dummyjson.com/products/1')
-// })
+test('Can synchronize common inherently asynchronous network operations.', () => {
+  // const axiosResult = toSync('axios', 'get')('https://dummyjson.com/products/1')
+  // console.log('axiosResult', axiosResult)
+  const nodeFetchResult = toSync('node-fetch', ['default', 'json'])([
+    ['https://dummyjson.com/products/1'],
+    [],
+  ])
+
+  expect(nodeFetchResult.error).toBeUndefined()
+  expect(nodeFetchResult.title).toBe('iPhone 9')
+
+  const missingNodeFetchResult = toSync('node-fetch', ['default', 'json'])([
+    ['https://dummyjson.com/produc/1'],
+    [],
+  ])
+
+  expect(missingNodeFetchResult.error.message).toContain('Unexpected token')
+  expect(missingNodeFetchResult.error.name).toBe('SyntaxError')
+  expect(missingNodeFetchResult.error.toString()).toContain('SyntaxError')
+})

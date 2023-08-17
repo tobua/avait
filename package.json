@@ -46,7 +46,7 @@
     "axios": "^1.4.0",
     "node-fetch": "^3.3.2",
     "padua": "^2.0.1",
-    "vitest": "^0.34.1"
+    "vitest": "^0.34.2"
   },
   "prettier": "padua/configuration/.prettierrc.json",
   "eslintConfig": {
