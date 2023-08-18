@@ -41,8 +41,6 @@ test('Works with main toSync export.', () => {
 })
 
 test('Can synchronize common inherently asynchronous network operations.', () => {
-  // const axiosResult = toSync('axios', 'get')('https://dummyjson.com/products/1')
-  // console.log('axiosResult', axiosResult)
   const nodeFetchResult = toSync('node-fetch', ['default', 'json'])([
     ['https://dummyjson.com/products/1'],
     [],
@@ -59,4 +57,7 @@ test('Can synchronize common inherently asynchronous network operations.', () =>
   expect(missingNodeFetchResult.error.message).toContain('Unexpected token')
   expect(missingNodeFetchResult.error.name).toBe('SyntaxError')
   expect(missingNodeFetchResult.error.toString()).toContain('SyntaxError')
+
+  const axiosResult = toSync('axios', ['get', 'data'])([['https://dummyjson.com/products/1']])
+  expect(axiosResult.title).toBe('iPhone 9')
 })

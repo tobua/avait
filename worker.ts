@@ -11,8 +11,11 @@ async function callMethodFromFile({
 }) {
   // Directly return promise from previous result.
   if (typeof functionName !== 'string') {
-    const result = functionName(...(args ?? []))
-    return result
+    if (typeof functionName === 'function') {
+      const result = functionName(...(args ?? []))
+      return result
+    }
+    return functionName
   }
 
   let fileExports = null
@@ -66,7 +69,13 @@ parentPort.addListener(
         response.result = await callMethodFromFile({
           // Cannot pass previousResult[name] to callMethodFromFile as it would lose context.
           functionName: previousResult
-            ? (...innerArgs: any[]) => previousResult[name](innerArgs)
+            ? (...innerArgs: any[]) => {
+                if (typeof previousResult[name] === 'function') {
+                  return previousResult[name](innerArgs)
+                }
+
+                return previousResult[name]
+              }
             : name,
           args: args[index],
           filePathOrModule,
