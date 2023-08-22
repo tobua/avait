@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises'
 import { test, expect, vi, afterEach } from 'vitest'
-import { it, registerAsyncErrorHandler, reset } from '../index'
+import { it, registerErrorHandler, reset } from '../index'
 import * as promise from './promises'
 
 afterEach(reset)
@@ -25,6 +25,24 @@ test('Can access the rejected promise error message.', async () => {
 test('Can access the rejected promise error.', async () => {
   const { error, value } = await it(promise.failingWithErrorPromise())
   expect(error).toBe('Custom Error')
+  expect(value).toBe(undefined)
+})
+
+test('Can access an early thrown error.', async () => {
+  const { error, value } = await it(promise.earlyErrorPromise())
+  expect(error).toBe('Early Error')
+  expect(value).toBe(undefined)
+})
+
+test('Can access the value in a chain of promises.', async () => {
+  const { error, value } = await it(promise.chainPromise())
+  expect(error).toBe(undefined)
+  expect(value).toBe(15)
+})
+
+test('Can access the error in a chain of erroneous promises.', async () => {
+  const { error, value } = await it(promise.erroneousChainPromise())
+  expect(error).toBe('Late Error 15')
   expect(value).toBe(undefined)
 })
 
@@ -80,7 +98,7 @@ test('Accessing missing properties will lead to a type error.', async () => {
 
 test("Error handler is called when error property isn't accessed.", async () => {
   const handlerMock = vi.fn()
-  registerAsyncErrorHandler(handlerMock)
+  registerErrorHandler(handlerMock)
   const { value: firstValue } = await it(promise.successfulPromise())
   expect(firstValue).toBe('Hey')
   expect(handlerMock).not.toHaveBeenCalled()
@@ -94,8 +112,8 @@ test("Error handler is called when error property isn't accessed.", async () => 
 test('Multiple error handlers can be added.', async () => {
   const firstHandlerMock = vi.fn(() => {})
   const secondHandlerMock = vi.fn(() => {})
-  registerAsyncErrorHandler(firstHandlerMock)
-  registerAsyncErrorHandler(secondHandlerMock)
+  registerErrorHandler(firstHandlerMock)
+  registerErrorHandler(secondHandlerMock)
   const { value: firstValue } = await it(promise.successfulPromise())
   expect(firstValue).toBe('Hey')
   expect(firstHandlerMock).not.toHaveBeenCalled()
@@ -109,7 +127,7 @@ test('Multiple error handlers can be added.', async () => {
 
 test('Handler is called with spread properties.', async () => {
   const handlerMock = vi.fn()
-  registerAsyncErrorHandler(handlerMock)
+  registerErrorHandler(handlerMock)
   const { first } = await it(promise.failingObjectPromise())
   expect(first).toBe(undefined)
   expect(handlerMock).toHaveBeenCalled()

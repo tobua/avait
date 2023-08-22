@@ -6,18 +6,18 @@ export const successfulPromise = () =>
 const objectReturnValue = { first: 123, second: 456, nested: { value: 789 } }
 export const objectPromise = () =>
   new Promise<typeof objectReturnValue>((done) => {
-    setTimeout(() => done(objectReturnValue))
+    setTimeout(() => done(objectReturnValue), 2)
   })
 
 export const objectPromiseWithError = () =>
   new Promise<typeof objectReturnValue & { error: string }>((done) => {
-    setTimeout(() => done({ ...objectReturnValue, error: 'Regular Value' }))
+    setTimeout(() => done({ ...objectReturnValue, error: 'Regular Value' }), 2)
   })
 
 export const failingObjectPromise = () =>
   new Promise<typeof objectReturnValue>((_, reject) => {
     // eslint-disable-next-line prefer-promise-reject-errors
-    setTimeout(() => reject('Error'))
+    setTimeout(() => reject('Error'), 2)
   })
 
 export const failingPromise = () =>
@@ -25,14 +25,14 @@ export const failingPromise = () =>
     setTimeout(() => {
       // eslint-disable-next-line prefer-promise-reject-errors
       reject('Error')
-    })
+    }, 2)
   })
 
 export const failingWithErrorPromise = () =>
   new Promise<any>((_, reject) => {
     setTimeout(() => {
       reject(new Error('Custom Error'))
-    })
+    }, 2)
   })
 
 export const thrownErrorPromise = () =>
@@ -48,24 +48,28 @@ export const chainedPromise = () =>
       oneMoreLevel: () => Promise<{ level: string }>
     }>
   }>((done) => {
-    setTimeout(() =>
-      done({
-        level: 1,
-        another: () =>
-          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
-            (done1) => {
-              setTimeout(() =>
-                done1({
-                  level: 2,
-                  oneMoreLevel: () =>
-                    new Promise<{ level: string }>((done2) => {
-                      setTimeout(() => done2({ level: '3' }))
+    setTimeout(
+      () =>
+        done({
+          level: 1,
+          another: () =>
+            new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
+              (done1) => {
+                setTimeout(
+                  () =>
+                    done1({
+                      level: 2,
+                      oneMoreLevel: () =>
+                        new Promise<{ level: string }>((done2) => {
+                          setTimeout(() => done2({ level: '3' }), 2)
+                        }),
                     }),
-                })
-              )
-            }
-          ),
-      })
+                  2
+                )
+              }
+            ),
+        }),
+      2
     )
   })
 
@@ -144,3 +148,25 @@ export const chainedPromiseWithRejects = (level = [3]) =>
       })
     )
   })
+
+export const earlyErrorPromise = async () => {
+  throw new Error('Early Error')
+}
+
+export const chainPromise = async () => {
+  const value = await new Promise<number>((done) => {
+    setTimeout(() => done(5), 10)
+  })
+  return new Promise<number>((done) => {
+    setTimeout(() => done(value * 3), 10)
+  })
+}
+
+export const erroneousChainPromise = async () => {
+  const value = await new Promise<number>((done) => {
+    setTimeout(() => done(5), 10)
+  })
+  return new Promise<number>((_, reject) => {
+    setTimeout(() => reject(new Error(`Late Error ${value * 3}`)), 10)
+  })
+}

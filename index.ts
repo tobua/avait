@@ -2,7 +2,7 @@ export { createSynchronizedFunction as toSync } from './to-sync'
 
 const handlers = []
 
-export function registerAsyncErrorHandler(handler: (error: Error) => void) {
+export function registerErrorHandler(handler: (error: Error) => void) {
   handlers.push(handler)
 }
 

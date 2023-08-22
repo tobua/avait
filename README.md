@@ -27,15 +27,15 @@ const { error, title } = await it(fetch('https://dummyjson.com/products/1')).add
 // title => 'iPhone 9'
 ```
 
-## Asynchronous Error Handler
+## Error Handler
 
-When an error is thrown but the `error` property isn't accessed errors can be sent to registered handlers.
+When an error is thrown but the `error` property isn't accessed errors will be sent to any registered error handlers.
 
 ```js
-import { it, registerAsyncErrorHandler } from 'avait'
+import { it, registerErrorHandler } from 'avait'
 import { readFile } from 'fs/promises'
 
-registerAsyncErrorHandler((error) => alert(error))
+registerErrorHandler((error) => alert(error))
 
 const { value } = await it(readFile('./my-file.txt', 'utf-8'))
 

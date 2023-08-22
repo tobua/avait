@@ -23,6 +23,12 @@
       }
     }
   },
+  "devDependencies": {
+    "axios": "^1.4.0",
+    "node-fetch": "^3.3.2",
+    "padua": "^2.0.3",
+    "vitest": "^0.34.2"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "dist/index.js",
@@ -42,12 +48,6 @@
   "keywords": [
     "await"
   ],
-  "devDependencies": {
-    "axios": "^1.4.0",
-    "node-fetch": "^3.3.2",
-    "padua": "^2.0.1",
-    "vitest": "^0.34.2"
-  },
   "prettier": "padua/configuration/.prettierrc.json",
   "eslintConfig": {
     "extends": "./node_modules/padua/configuration/eslint.cjs",
