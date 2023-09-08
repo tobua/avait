@@ -42,6 +42,20 @@ const { value } = await it(readFile('./my-file.txt', 'utf-8'))
 console.log(`File contents: ${value}`)
 ```
 
+## Multiple Promises
+
+It's possible to pass an array of promises. In this case the result `value` as well as the `error` will also be returned as an array. Using the second argument parallelism can be enabled which leads to the promises being run in parallel.
+
+```js
+import { it } from 'avait'
+
+const { value } = await it([firstPromise, secondPromise])
+console.log(value[0])
+// With parallelism enabled
+const { value } = await it([firstPromise, secondPromise], { parallel: true })
+console.log(value[1])
+```
+
 ## Converting an Async Method to a Synchronous One
 
 Using the `toSync` method it's possible to leverage node `worker_threads` to turn an async method into a synchronous one. This is usually not necessary nor recommended as asynchronous methods are supported in any environment nowadays. As the first argument the method accepts a module path or a file (basically anything that can be passed to `import`) with a specific export as the second argument which will default to the `default` export. The second argument can be an array in case multiple calls should be chained. Proper chaining is important as the final result needs to be serializable in order to be passed back from the worker. The function returned by `toSync` can then be synchronously be called adding any arguments as an array or in the case of chaining multiple arrays.

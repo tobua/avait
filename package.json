@@ -24,10 +24,10 @@
     }
   },
   "devDependencies": {
-    "axios": "^1.4.0",
+    "axios": "^1.5.0",
     "node-fetch": "^3.3.2",
     "padua": "^2.0.3",
-    "vitest": "^0.34.2"
+    "vitest": "^0.34.4"
   },
   "type": "module",
   "sideEffects": false,
