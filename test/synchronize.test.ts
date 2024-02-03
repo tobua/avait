@@ -1,7 +1,6 @@
 import { Worker } from 'worker_threads'
 import { test, expect } from 'vitest'
-import { toSync } from '../index'
-import { createSynchronizedFunction, createWorker } from '../to-sync'
+import { toSync, createSynchronizedFunction, createWorker } from '../synchronize'
 
 test('Creates a worker.', () => {
   const worker = createWorker()
@@ -15,7 +14,7 @@ test('Creates and resolves synchronized functions for various types.', () => {
 
   const asyncWrappedMethod = createSynchronizedFunction(
     '../test/fixture/methods.js',
-    'asyncWrappedMethod'
+    'asyncWrappedMethod',
   )
   expect(asyncWrappedMethod()).toBe('done async wrapped')
 

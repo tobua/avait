@@ -5,7 +5,7 @@ let worker: Worker
 export function createWorker(): Worker {
   if (!worker) {
     worker = new Worker(
-      require.resolve(process.env.NODE_ENV === 'production' ? './worker.js' : './dist/worker.js')
+      require.resolve(process.env.NODE_ENV === 'production' ? './worker.js' : './dist/worker.js'),
     )
     worker.unref()
   }
@@ -25,7 +25,7 @@ type FunctionArguments<T extends string | string[]> = T extends string[]
 
 export function createSynchronizedFunction<T extends string | string[]>(
   filePathOrModule: string,
-  functionName?: T
+  functionName?: T,
 ) {
   return (...args: FunctionArguments<T>) => {
     const signal = new Int32Array(new SharedArrayBuffer(4))
@@ -39,7 +39,7 @@ export function createSynchronizedFunction<T extends string | string[]>(
         args: Array.isArray(functionName) ? args : [args],
         filePathOrModule,
       },
-      [workerPort]
+      [workerPort],
     )
 
     Atomics.wait(signal, 0, 0)
@@ -55,3 +55,5 @@ export function createSynchronizedFunction<T extends string | string[]>(
     return result
   }
 }
+
+export const toSync = createSynchronizedFunction

@@ -13,6 +13,7 @@
   "padua": {
     "entry": [
       "index.ts",
+      "synchronize.ts",
       "worker.ts"
     ],
     "esbuild": {
@@ -24,10 +25,10 @@
     }
   },
   "devDependencies": {
-    "axios": "^1.5.0",
+    "axios": "^1.6.7",
     "node-fetch": "^3.3.2",
-    "padua": "^2.0.3",
-    "vitest": "^0.34.4"
+    "padua": "^2.0.9",
+    "vitest": "^1.2.2"
   },
   "type": "module",
   "sideEffects": false,
@@ -37,6 +38,12 @@
       "default": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      }
+    },
+    "./synchronize": {
+      "default": {
+        "types": "./dist/synchronize.d.ts",
+        "default": "./dist/synchronize.js"
       }
     }
   },
@@ -60,6 +67,6 @@
     "provenance": true
   },
   "engines": {
-    "node": ">= 16"
+    "node": ">= 18"
   }
 }

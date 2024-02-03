@@ -1,8 +1,8 @@
-export { createSynchronizedFunction as toSync } from './to-sync'
+type ErrorHandler = (error: Error | string | string[]) => void
 
-const handlers = []
+const handlers: ErrorHandler[] = []
 
-export function registerErrorHandler(handler: (error: Error) => void) {
+export function registerErrorHandler(handler: ErrorHandler) {
   handlers.push(handler)
 }
 
@@ -10,7 +10,7 @@ export function reset() {
   handlers.splice(0)
 }
 
-function createAccessProxy<T extends any>(error: string | string[] | false, value: T) {
+function createAccessProxy<T extends any>(error: string | string[] | false | undefined, value: T) {
   let errorPropertyAccessed = false
   const initialTarget = (
     typeof value === 'object' ? { error, value, ...value } : { error, value }
@@ -45,7 +45,7 @@ function createAccessProxy<T extends any>(error: string | string[] | false, valu
       if (prop === 'value') {
         return value
       }
-      if (typeof value === 'object') {
+      if (value && typeof value === 'object') {
         return value[prop]
       }
       return value
@@ -66,7 +66,7 @@ function createAccessProxy<T extends any>(error: string | string[] | false, valu
       }
     },
     ownKeys() {
-      if (typeof value !== 'object') {
+      if (!value || typeof value !== 'object') {
         return []
       }
       return Object.keys(value)
@@ -125,13 +125,13 @@ interface Chainable<T, U> {
 
 export function it<T extends any>(
   promise: Promise<T> | Promise<T>[],
-  options: Options = {}
+  options: Options = {},
 ): ReturnType<T, T> {
-  const next = [] // Additionally chained promises to be evaluated in series.
+  const next: Function[] = [] // Additionally chained promises to be evaluated in series.
 
   const runPromise = (currentPromise: Promise<T> | Promise<T>[]) => async (done: Function) => {
     let result: any
-    let errorMessage: string | string[]
+    let errorMessage: string | string[] | undefined
 
     try {
       ;[result, errorMessage] = Array.isArray(promise)
@@ -143,7 +143,7 @@ export function it<T extends any>(
 
     // Exist on first error as further promises would require the result.
     if (next.length && !errorMessage) {
-      const nextPromise = next.shift()(result)
+      const nextPromise = (next.shift() as Function)(result)
       result = await new Promise(runPromise(nextPromise))
       done(result)
     } else {
