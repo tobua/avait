@@ -1,4 +1,4 @@
-import { test, expect, vi, afterEach } from 'vitest'
+import { test, expect, mock, afterEach } from 'bun:test'
 import { it, registerErrorHandler, reset } from '../index'
 import * as promise from './promises'
 
@@ -34,7 +34,7 @@ test('Will evaluate promises in parallel.', async () => {
 })
 
 test('When registered the error handler will be called.', async () => {
-  const handlerMock = vi.fn()
+  const handlerMock = mock()
   registerErrorHandler(handlerMock)
 
   const { value } = await it([

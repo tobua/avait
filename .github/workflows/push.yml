@@ -15,10 +15,11 @@ jobs:
       - name: 🐰 Install Bun
         uses: oven-sh/setup-bun@v1
       - run: bun install
+      - run: bun types
       - name: 🚧 Build
         run: bun run build
-      - name: 🧪 Test # Still uses vitest ;(
-        run: bun run test
+      - name: 🧪 Test
+        run: bun test
       - name: 📢 Release
         uses: tobua/release-npm-action@v3
         with:

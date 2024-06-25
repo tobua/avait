@@ -2,6 +2,8 @@ import { Worker } from 'worker_threads'
 import { test, expect } from 'vitest'
 import { toSync, createSynchronizedFunction, createWorker } from '../synchronize'
 
+// TODO use make-synchronized (not yet compatible with Bun)
+
 test('Creates a worker.', () => {
   const worker = createWorker()
   expect(worker).toBeDefined()
@@ -28,7 +30,7 @@ test('Creates and resolves synchronized functions for various types.', () => {
   expect(missingMethod()).toContain('Failed to import')
 
   const chainedFetch = createSynchronizedFunction('node-fetch', ['default', 'json'])
-  expect(chainedFetch([['https://dummyjson.com/products/1'], []]).title).toBe('iPhone 9')
+  expect(chainedFetch([['https://dummyjson.com/products/1'], []]).title).toContain('Mascara')
 })
 
 test('Works with main toSync export.', () => {
@@ -46,7 +48,7 @@ test('Can synchronize common inherently asynchronous network operations.', () =>
   ])
 
   expect(nodeFetchResult.error).toBeUndefined()
-  expect(nodeFetchResult.title).toBe('iPhone 9')
+  expect(nodeFetchResult.title).toContain('Mascara')
 
   const missingNodeFetchResult = toSync('node-fetch', ['default', 'json'])([
     ['https://dummyjson.com/produc/1'],
@@ -58,5 +60,5 @@ test('Can synchronize common inherently asynchronous network operations.', () =>
   expect(missingNodeFetchResult.error.toString()).toContain('SyntaxError')
 
   const axiosResult = toSync('axios', ['get', 'data'])([['https://dummyjson.com/products/1']])
-  expect(axiosResult.title).toBe('iPhone 9')
+  expect(axiosResult.title).toContain('Mascara')
 })
