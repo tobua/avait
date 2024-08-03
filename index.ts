@@ -1,3 +1,7 @@
+import { load } from './load'
+
+export { load }
+
 type ErrorHandler = (error: Error | string | string[]) => void
 
 const handlers: ErrorHandler[] = []
@@ -10,26 +14,20 @@ export function reset() {
   handlers.splice(0)
 }
 
-function createAccessProxy<T extends any>(error: string | string[] | false | undefined, value: T) {
+function createAccessProxy<T extends { [key: string | symbol]: any }>(error: string | string[] | false | undefined, value: T) {
   let errorPropertyAccessed = false
-  const initialTarget = (
-    typeof value === 'object' ? { error, value, ...value } : { error, value }
-  ) as {
+  const initialTarget = (typeof value === 'object' ? { error, value, ...value } : { error, value }) as {
     error: false | string
     value: T
   } & ValueType<T>
 
   return new Proxy<{ error: false | string; value: T } & ValueType<T>>(initialTarget, {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Splitting up won't do much.
     get(_, prop) {
       if (prop === 'then') {
         return null
       }
-      if (
-        prop === 'error' &&
-        !error &&
-        typeof value === 'object' &&
-        Object.hasOwn(value, 'error')
-      ) {
+      if (prop === 'error' && !error && typeof value === 'object' && Object.hasOwn(value as object, 'error')) {
         errorPropertyAccessed = true
         return (value as any).error
       }
@@ -38,9 +36,9 @@ function createAccessProxy<T extends any>(error: string | string[] | false | und
         return error
       }
       if (!errorPropertyAccessed && error) {
-        handlers.forEach((handler) => {
+        for (const handler of handlers) {
           handler(error)
-        })
+        }
       }
       if (prop === 'value') {
         return value
@@ -88,7 +86,7 @@ interface Options {
   parallel?: boolean
 }
 
-async function resolvePromises<T extends any>(promises: Promise<T>[], options: Options) {
+async function resolvePromises<T>(promises: Promise<T>[], options: Options) {
   const results: T[] = []
   const errors: string[] = []
 
@@ -96,7 +94,7 @@ async function resolvePromises<T extends any>(promises: Promise<T>[], options: O
     try {
       return [(await Promise.all(promises)) as T[]] as const
     } catch (error) {
-      return [[], Array.isArray(error) ? error.map(readableError) : [readableError(error)]] as const
+      return [[], Array.isArray(error) ? error.map(readableError) : [readableError(error as Error | string)]] as const
     }
   }
 
@@ -107,7 +105,7 @@ async function resolvePromises<T extends any>(promises: Promise<T>[], options: O
       const result = await promise
       results.push(result)
     } catch (error) {
-      errors.push(readableError(error))
+      errors.push(readableError(error as Error | string))
     }
   }
 
@@ -116,17 +114,13 @@ async function resolvePromises<T extends any>(promises: Promise<T>[], options: O
 
 type ValueType<T> = T extends Promise<infer U> ? U : T
 
-type ReturnType<T, U> = Promise<{ error: false | string; value: T } & ValueType<T>> &
-  Chainable<T, U>
+type ReturnType<T, U> = Promise<{ error: false | string; value: T } & ValueType<T>> & Chainable<T, U>
 
 interface Chainable<T, U> {
   add: <V>(method: (value: T) => Promise<V>) => ReturnType<V, U>
 }
 
-export function it<T extends any>(
-  promise: Promise<T> | Promise<T>[],
-  options: Options = {},
-): ReturnType<T, T> {
+export function it<T>(promise: Promise<T> | Promise<T>[], options: Options = {}): ReturnType<T, T> {
   const next: Function[] = [] // Additionally chained promises to be evaluated in series.
 
   const runPromise = (currentPromise: Promise<T> | Promise<T>[]) => async (done: Function) => {
@@ -134,11 +128,9 @@ export function it<T extends any>(
     let errorMessage: string | string[] | undefined
 
     try {
-      ;[result, errorMessage] = Array.isArray(promise)
-        ? await resolvePromises(promise, options)
-        : [await currentPromise]
+      ;[result, errorMessage] = Array.isArray(promise) ? await resolvePromises(promise, options) : [await currentPromise]
     } catch (error) {
-      errorMessage = readableError(error)
+      errorMessage = readableError(error as Error | string)
     }
 
     // Exist on first error as further promises would require the result.

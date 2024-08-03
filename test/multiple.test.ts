@@ -1,5 +1,6 @@
-import { test, expect, mock, afterEach } from 'bun:test'
+import { afterEach, expect, mock, test } from 'bun:test'
 import { it, registerErrorHandler, reset } from '../index'
+// biome-ignore lint/style/noNamespaceImport: Not published.
 import * as promise from './promises'
 
 afterEach(reset)
@@ -13,11 +14,7 @@ test('Can run multiple promises.', async () => {
 })
 
 test('All errors will be returned when running multiple promises.', async () => {
-  const { value, error } = await it([
-    promise.successfulPromise(),
-    promise.failingPromise(),
-    promise.failingPromise(),
-  ])
+  const { value, error } = await it([promise.successfulPromise(), promise.failingPromise(), promise.failingPromise()])
 
   expect(error).toEqual(['Error', 'Error'])
   expect(value).toEqual(['Hey'])
@@ -37,11 +34,7 @@ test('When registered the error handler will be called.', async () => {
   const handlerMock = mock()
   registerErrorHandler(handlerMock)
 
-  const { value } = await it([
-    promise.failingPromise(),
-    promise.successfulPromise(),
-    promise.objectPromise(),
-  ])
+  const { value } = await it([promise.failingPromise(), promise.successfulPromise(), promise.objectPromise()])
 
   expect(Array.isArray(value)).toBe(true)
   expect(value[0]).toBe('Hey')

@@ -1,6 +1,8 @@
-import { readFile } from 'fs/promises'
-import { test, expect, mock, afterEach } from 'bun:test'
+import { afterEach, expect, mock, test } from 'bun:test'
+// biome-ignore lint/correctness/noNodejsModules: Tests run using Bun.
+import { readFile } from 'node:fs/promises'
 import { it, registerErrorHandler, reset } from '../index'
+// biome-ignore lint/style/noNamespaceImport: Not published.
 import * as promise from './promises'
 
 afterEach(reset)
@@ -111,8 +113,8 @@ test("Error handler is called when error property isn't accessed.", async () => 
 })
 
 test('Multiple error handlers can be added.', async () => {
-  const firstHandlerMock = mock(() => {})
-  const secondHandlerMock = mock(() => {})
+  const firstHandlerMock = mock(() => null)
+  const secondHandlerMock = mock(() => null)
   registerErrorHandler(firstHandlerMock)
   registerErrorHandler(secondHandlerMock)
   const { value: firstValue } = await it(promise.successfulPromise())

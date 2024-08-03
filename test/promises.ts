@@ -53,23 +53,21 @@ export const chainedPromise = () =>
         done({
           level: 1,
           another: () =>
-            new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
-              (done1) => {
-                setTimeout(
-                  () =>
-                    done1({
-                      level: 2,
-                      oneMoreLevel: () =>
-                        new Promise<{ level: string }>((done2) => {
-                          setTimeout(() => done2({ level: '3' }), 2)
-                        }),
-                    }),
-                  2
-                )
-              }
-            ),
+            new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>((done1) => {
+              setTimeout(
+                () =>
+                  done1({
+                    level: 2,
+                    oneMoreLevel: () =>
+                      new Promise<{ level: string }>((done2) => {
+                        setTimeout(() => done2({ level: '3' }), 2)
+                      }),
+                  }),
+                2,
+              )
+            }),
         }),
-      2
+      2,
     )
   })
 
@@ -88,26 +86,24 @@ export const chainedPromiseWithErrors = (level = [3]) =>
       done({
         level: 1,
         another: () =>
-          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
-            (done1) => {
-              if (level.includes(2)) {
-                throw new Error('level 2 error')
-              }
-              setTimeout(() =>
-                done1({
-                  level: 2,
-                  oneMoreLevel: () =>
-                    new Promise<{ level: string }>((done2) => {
-                      if (level.includes(3)) {
-                        throw new Error('level 3 error')
-                      }
-                      setTimeout(() => done2({ level: '3' }))
-                    }),
-                })
-              )
+          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>((done1) => {
+            if (level.includes(2)) {
+              throw new Error('level 2 error')
             }
-          ),
-      })
+            setTimeout(() =>
+              done1({
+                level: 2,
+                oneMoreLevel: () =>
+                  new Promise<{ level: string }>((done2) => {
+                    if (level.includes(3)) {
+                      throw new Error('level 3 error')
+                    }
+                    setTimeout(() => done2({ level: '3' }))
+                  }),
+              }),
+            )
+          }),
+      }),
     )
   })
 
@@ -126,29 +122,28 @@ export const chainedPromiseWithRejects = (level = [3]) =>
       done({
         level: 1,
         another: () =>
-          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>(
-            (done1, reject1) => {
-              if (level.includes(2)) {
-                reject1(new Error('level 2 reject'))
-              }
-              setTimeout(() =>
-                done1({
-                  level: 2,
-                  oneMoreLevel: () =>
-                    new Promise<{ level: string }>((done2, reject2) => {
-                      if (level.includes(3)) {
-                        reject2(new Error('level 3 reject'))
-                      }
-                      setTimeout(() => done2({ level: '3' }))
-                    }),
-                })
-              )
+          new Promise<{ level: number; oneMoreLevel: () => Promise<{ level: string }> }>((done1, reject1) => {
+            if (level.includes(2)) {
+              reject1(new Error('level 2 reject'))
             }
-          ),
-      })
+            setTimeout(() =>
+              done1({
+                level: 2,
+                oneMoreLevel: () =>
+                  new Promise<{ level: string }>((done2, reject2) => {
+                    if (level.includes(3)) {
+                      reject2(new Error('level 3 reject'))
+                    }
+                    setTimeout(() => done2({ level: '3' }))
+                  }),
+              }),
+            )
+          }),
+      }),
     )
   })
 
+// biome-ignore lint/suspicious/useAwait: For tests only.
 export const earlyErrorPromise = async () => {
   throw new Error('Early Error')
 }

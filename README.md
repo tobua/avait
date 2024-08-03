@@ -4,7 +4,7 @@
 
 # avait
 
-Async error handling without try-catch.
+Async error handling and fetch without try-catch.
 
 ## Usage
 
@@ -31,7 +31,7 @@ const { error, title } = await it(fetch('https://dummyjson.com/products/1')).add
 
 When an error is thrown but the `error` property isn't accessed errors will be sent to any registered error handlers.
 
-```js
+```ts
 import { it, registerErrorHandler } from 'avait'
 import { readFile } from 'fs/promises'
 
@@ -46,7 +46,7 @@ console.log(`File contents: ${value}`)
 
 It's possible to pass an array of promises. In this case the result `value` as well as the `error` will also be returned as an array. Using the second argument parallelism can be enabled which leads to the promises being run in parallel.
 
-```js
+```ts
 import { it } from 'avait'
 
 const { value } = await it([firstPromise, secondPromise])
@@ -56,30 +56,27 @@ const { value } = await it([firstPromise, secondPromise], { parallel: true })
 console.log(value[1])
 ```
 
+## Simple `fetch`
+
+This is a super small wrapper around `fetch` that's supposed to make error handling and accessing the data simple.
+
+```ts
+import { load } from 'avait'
+
+const { error, status, data, text } = await load('http://localhost:3000/api')
+
+// error: boolean | string, indicating if the request errored.
+// status: The HTTP status code.
+// data: parsed JSON data if response is JSON.
+// text: string, text content if response contains text.
+// ...props: For a JSON response top-level object properties will be spread on the return object.
+```
+
 ## Converting an Async Method to a Synchronous One
 
-> [!TIP]
-> Note that neither this feature nor the new [make-synchronized](https://github.com/fisker/make-synchronized) will work in Bun.
-
-Using the `toSync` method it's possible to leverage node `worker_threads` to turn an async method into a synchronous one. This is usually not necessary nor recommended as asynchronous methods are supported in any environment nowadays. As the first argument the method accepts a module path or a file (basically anything that can be passed to `import`) with a specific export as the second argument which will default to the `default` export. The second argument can be an array in case multiple calls should be chained. Proper chaining is important as the final result needs to be serializable in order to be passed back from the worker. The function returned by `toSync` can then be synchronously be called adding any arguments as an array or in the case of chaining multiple arrays.
-
-```js
-import { toSync } from 'avait/synchronize'
-
-// Synchronize an async module.
-const fileContents = toSync('fs/promises', 'readFile')('./my-file.txt', 'utf-8')
-const { title } = toSync('node-fetch', ['default', 'json'])([
-  ['https://dummyjson.com/products/1'],
-  [],
-])
-const { id, description } = toSync('axios', ['get', 'data'])([['https://dummyjson.com/products/1']])
-
-// Synchronize an async method from a local file.
-const prased = toSync('../parse-data.js', 'parse')([[data]])
-```
+> [!IMPORTANT]
+> This feature has been removed with Version 2 of this plugin. I haven't found it useful and it currently doensn't work with Bun. Check out [make-synchronized](https://github.com/fisker/make-synchronized) if you're looking to provide a synchronized interface to an asynchronous method.
 
 ## Credits
 
 Error handling inspired by [await-to-js](https://github.com/scopsy/await-to-js).
-
-Async to sync approach taken from [@prettier/sync](https://github.com/prettier/prettier-synchronized).
