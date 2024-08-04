@@ -31,3 +31,33 @@ test('The returned data can be typed.', async () => {
   expect(text).not.toBeDefined() // text.length accessible.
   expect(posts.length).toBe(0)
 })
+
+test('Can make a POST request.', async () => {
+  const { error, status, data, text, ...props } = await load('http://localhost:3000/api/json', { name: "I'm posting!" })
+
+  expect(error).toBe(false)
+  expect(status).toBe(200)
+  expect(data).toEqual({ method: 'POST', result: [] })
+  expect(text).not.toBeDefined()
+  expect(props).toEqual({ method: 'POST', result: [] })
+})
+
+test('Can make a PUT request.', async () => {
+  const { error, status, data, text, ...props } = await load('http://localhost:3000/api/json', { id: 7, name: "I'm putting!" })
+
+  expect(error).toBe(false)
+  expect(status).toBe(200)
+  expect(data).toEqual({ method: 'PUT', result: 5 })
+  expect(text).not.toBeDefined()
+  expect(props).toEqual({ method: 'PUT', result: 5 })
+})
+
+test('Can make a DELETE request.', async () => {
+  const { error, status, data, text, ...props } = await load('http://localhost:3000/api/json', 3)
+
+  expect(error).toBe(false)
+  expect(status).toBe(200)
+  expect(data).toEqual({ method: 'DELETE', result: true })
+  expect(text).not.toBeDefined()
+  expect(props).toEqual({ method: 'DELETE', result: true })
+})

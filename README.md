@@ -63,13 +63,18 @@ This is a super small wrapper around `fetch` that's supposed to make error handl
 ```ts
 import { load } from 'avait'
 
-const { error, status, data, text } = await load('http://localhost:3000/api')
+const { error, status, data, text } = await load('http://localhost:3000/api') // GET method
 
 // error: boolean | string, indicating if the request errored.
 // status: The HTTP status code.
 // data: parsed JSON data if response is JSON.
 // text: string, text content if response contains text.
 // ...props: For a JSON response top-level object properties will be spread on the return object.
+
+
+await load('http://localhost:3000/api', { name: 'John Doe' }) // POST method
+await load('http://localhost:3000/api', { id: 1, name: 'John Doe' }) // PUT method
+await load('http://localhost:3000/api', 1) // DELETE method
 ```
 
 ## Converting an Async Method to a Synchronous One
