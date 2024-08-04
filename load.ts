@@ -35,8 +35,6 @@ export async function load<T>(url: string, data?: object | number) {
   let response: Response
   const hasData = typeof data !== 'undefined'
 
-  console.log(getMethod(data), hasData ? JSON.stringify(data) : undefined)
-
   try {
     response = await fetch(url, {
       method: getMethod(data),
