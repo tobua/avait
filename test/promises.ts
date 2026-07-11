@@ -3,6 +3,11 @@ export const successfulPromise = () =>
     setTimeout(() => done('Hey'))
   })
 
+export const successfulStringPromise = () =>
+  new Promise<string>((done) => {
+    setTimeout(() => done('Hey'))
+  })
+
 const objectReturnValue = { first: 123, second: 456, nested: { value: 789 } }
 export const objectPromise = () =>
   new Promise<typeof objectReturnValue>((done) => {

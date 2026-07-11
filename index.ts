@@ -1,6 +1,4 @@
-import { load } from './load'
-
-export { load }
+export { load } from './load'
 
 type ErrorHandler = (error: Error | string | string[]) => void
 
@@ -22,7 +20,6 @@ function createAccessProxy<T extends { [key: string | symbol]: any }>(error: str
   } & ValueType<T>
 
   return new Proxy<{ error: false | string; value: T } & ValueType<T>>(initialTarget, {
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Splitting up won't do much.
     get(_, prop) {
       if (prop === 'then') {
         return null
@@ -109,7 +106,7 @@ async function resolvePromises<T>(promises: Promise<T>[], options: Options) {
     }
   }
 
-  return [results, errors.length ? errors : undefined] as const
+  return [results, errors.length > 0 ? errors : undefined] as const
 }
 
 type ValueType<T> = T extends Promise<infer U> ? U : T
@@ -123,28 +120,33 @@ interface Chainable<T, U> {
 export function it<T>(promise: Promise<T> | Promise<T>[], options: Options = {}): ReturnType<T, T> {
   const next: Function[] = [] // Additionally chained promises to be evaluated in series.
 
-  const runPromise = (currentPromise: Promise<T> | Promise<T>[]) => async (done: Function) => {
-    let result: any
-    let errorMessage: string | string[] | undefined
+  const runPromise = (currentPromise: Promise<T> | Promise<T>[]) => (done: Function) => {
+    // biome-ignore lint/complexity/noVoid: Cannot tell if there's a better way to do this.
+    void (async () => {
+      let result: any
+      let errorMessage: string | string[] | undefined
 
-    try {
-      ;[result, errorMessage] = Array.isArray(promise) ? await resolvePromises(promise, options) : [await currentPromise]
-    } catch (error) {
-      errorMessage = readableError(error as Error | string)
-    }
+      try {
+        ;[result, errorMessage] = Array.isArray(promise) ? await resolvePromises(promise, options) : [await currentPromise]
+      } catch (error) {
+        errorMessage = readableError(error as Error | string)
+      }
 
-    // Exist on first error as further promises would require the result.
-    if (next.length && !errorMessage) {
-      const nextPromise = (next.shift() as Function)(result)
-      result = await new Promise(runPromise(nextPromise))
-      done(result)
-    } else {
-      const proxy = createAccessProxy(errorMessage, result)
-      done(proxy)
-    }
+      try {
+        if (next.length > 0 && !errorMessage) {
+          const nextPromise = (next.shift() as Function)(result)
+          result = await new Promise(runPromise(nextPromise))
+          done(result)
+        } else {
+          done(createAccessProxy(errorMessage, result))
+        }
+      } catch (error) {
+        done(createAccessProxy(readableError(error as Error | string), result))
+      }
+    })()
   }
 
-  const returnPromise = new Promise(runPromise(promise)) as any
+  const returnPromise = new Promise((resolve) => runPromise(promise)(resolve)) as any
 
   returnPromise.add = (method: Function) => {
     next.push(method)

@@ -1,23 +1,24 @@
 import { cors } from '@elysiajs/cors'
 import { Elysia, t } from 'elysia'
+import type { Context } from 'elysia'
 
-function getJson(_request: Request) {
+function getJson(_request: Context) {
   return Response.json({ posts: [] })
 }
 
-function postJson(_request: Request) {
+function postJson(_request: Context) {
   return Response.json({ method: 'POST', result: [] })
 }
 
-function putJson(_request: Request) {
+function putJson(_request: Context) {
   return Response.json({ method: 'PUT', result: 5 })
 }
 
-function deleteJson(_request: Request) {
+function deleteJson(_request: Context) {
   return Response.json({ method: 'DELETE', result: true })
 }
 
-function getText(_request: Request) {
+function getText(_request: Context) {
   return new Response('Hello World')
 }
 

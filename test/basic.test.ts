@@ -154,7 +154,7 @@ test('Example in the documentation is working.', async () => {
 test('Example in the documentation is failing with missing file.', async () => {
   const { error } = await it(readFile('./test/fixture/missing.txt', 'utf-8'))
 
-  expect(error).toContain('No such file or directory')
+  expect(error).toContain('no such file or directory')
 })
 
 test('Can be used with fetch.', async () => {
