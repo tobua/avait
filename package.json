@@ -37,9 +37,6 @@
     "asynchronous",
     "fetch"
   ],
-  "publishConfig": {
-    "provenance": true
-  },
   "configuration": {
     "gitignore": "recommended",
     "vscode": "biome",
