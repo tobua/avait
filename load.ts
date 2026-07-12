@@ -35,16 +35,18 @@ export async function load<T>(url: string, data?: object | number) {
   let response: Response
   const hasData = typeof data !== 'undefined'
 
+  const init: RequestInit = {
+    method: getMethod(data),
+    ...(hasData && {
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }),
+  }
+
   try {
-    response = await fetch(url, {
-      method: getMethod(data),
-      body: hasData ? JSON.stringify(data) : undefined,
-      headers: hasData
-        ? {
-            'Content-Type': 'application/json',
-          }
-        : undefined,
-    })
+    response = await fetch(url, init)
   } catch (_error) {
     return { error: true, status: 500 } as {
       error: string | boolean
